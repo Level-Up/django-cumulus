@@ -1,7 +1,6 @@
 import datetime
 import optparse
 import os
-
 import cloudfiles
 
 from django.conf import settings
@@ -26,6 +25,8 @@ class Command(BaseCommand):
     STATIC_CONTAINER = getattr(settings, 'CUMULUS_STATIC_CONTAINER')
     USE_SERVICENET   = getattr(settings, 'CUMULUS_USE_SERVICENET', True)
     FILTER_LIST      = getattr(settings, 'CUMULUS_FILTER_LIST', [])
+    AUTH_URL         = getattr(settings, 'CUMULUS_AUTH_URL', 'us_authurl')
+    auth_urls        = {'uk_authurl': cloudfiles.uk_authurl, 'us_authurl': cloudfiles.us_authurl} 
 
     # paths
     DIRECTORY        = os.path.abspath(settings.STATIC_ROOT)
@@ -55,6 +56,7 @@ class Command(BaseCommand):
     def sync_files(self):
         self.conn = cloudfiles.get_connection(self.USERNAME,
                                               self.API_KEY,
+                                              authurl = self.auth_urls[self.AUTH_URL],
                                               servicenet=self.USE_SERVICENET)
 
         try:

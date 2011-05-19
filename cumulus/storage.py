@@ -1,24 +1,32 @@
-import cloudfiles
 import mimetypes
-from cloudfiles.errors import NoSuchObject, ResponseError
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.core.files import File
 from django.core.files.storage import Storage
+from django.utils.text import get_valid_filename
+
+try:
+    import cloudfiles
+    from cloudfiles.errors import NoSuchObject, ResponseError
+except ImportError:
+    raise ImproperlyConfigured("Could not load cloudfiles dependency. See "
+                               "http://www.mosso.com/cloudfiles.jsp.")
 
 USERNAME = getattr(settings, 'CUMULUS_USERNAME')
 API_KEY = getattr(settings, 'CUMULUS_API_KEY')
 CONTAINER = getattr(settings, 'CUMULUS_CONTAINER')
 TIMEOUT = getattr(settings, 'CUMULUS_TIMEOUT', 5)
 USE_SERVICENET = getattr(settings, 'CUMULUS_USE_SERVICENET', False)
-CNAMES = getattr(settings, 'CUMULUS_CNAMES', None)
 # TODO: implement TTL into cloudfiles methods
 TTL = getattr(settings, 'CUMULUS_TTL', 600)
+AUTH_URL         = getattr(settings, 'CUMULUS_AUTH_URL', 'us_authurl')
+auth_urls        = {'uk_authurl': cloudfiles.uk_authurl, 'us_authurl': cloudfiles.us_authurl}
 
 
 class CloudFilesStorage(Storage):
     """
-    Custom storage for Rackspace Cloud Files.
+    Custom storage for Mosso Cloud Files.
     """
     default_quick_listdir = True
 
@@ -51,6 +59,7 @@ class CloudFilesStorage(Storage):
             self._connection = cloudfiles.get_connection(
                                   username=self.username,
                                   api_key=self.api_key,
+                                  authurl = self.auth_urls[self.AUTH_URL],
                                   timeout=self.timeout,
                                   servicenet=self.use_servicenet,
                                   **self.connection_kwargs)
@@ -69,7 +78,8 @@ class CloudFilesStorage(Storage):
 
     def _set_container(self, container):
         """
-        Set the container, making it publicly available if it is not already.
+        Set the container, making it publicly available (on Limelight CDN) if
+        it is not already.
         """
         if not container.is_public():
             container.make_public()
@@ -82,8 +92,6 @@ class CloudFilesStorage(Storage):
     def _get_container_url(self):
         if not hasattr(self, '_container_public_uri'):
             self._container_public_uri = self.container.public_uri()
-        if CNAMES and self._container_public_uri in CNAMES:
-            self._container_public_uri = CNAMES[self._container_public_uri]
         return self._container_public_uri
 
     container_url = property(_get_container_url)
