@@ -1,7 +1,6 @@
 import datetime
 import optparse
 import os
-
 import cloudfiles
 
 from django.conf import settings
@@ -28,8 +27,6 @@ class Command(BaseCommand):
     FILTER_LIST      = getattr(settings, 'CUMULUS_FILTER_LIST', [])
     AUTH_URL         = getattr(settings, 'CUMULUS_AUTH_URL', 'us_authurl')
     auth_urls        = {'uk_authurl': cloudfiles.uk_authurl, 'us_authurl': cloudfiles.us_authurl} 
-
-
     # paths
     DIRECTORY        = os.path.abspath(settings.STATIC_ROOT)
     STATIC_URL       = settings.STATIC_URL
