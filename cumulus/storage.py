@@ -14,6 +14,8 @@ USE_SERVICENET = getattr(settings, 'CUMULUS_USE_SERVICENET', False)
 CNAMES = getattr(settings, 'CUMULUS_CNAMES', None)
 # TODO: implement TTL into cloudfiles methods
 TTL = getattr(settings, 'CUMULUS_TTL', 600)
+AUTH_URL         = getattr(settings, 'CUMULUS_AUTH_URL', 'us_authurl')
+auth_urls        = {'uk_authurl': cloudfiles.uk_authurl, 'us_authurl': cloudfiles.us_authurl}
 
 
 class CloudFilesStorage(Storage):
@@ -51,6 +53,7 @@ class CloudFilesStorage(Storage):
             self._connection = cloudfiles.get_connection(
                                   username=self.username,
                                   api_key=self.api_key,
+                                  authurl = self.auth_urls[self.AUTH_URL],
                                   timeout=self.timeout,
                                   servicenet=self.use_servicenet,
                                   **self.connection_kwargs)
